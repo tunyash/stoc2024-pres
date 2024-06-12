@@ -1,14 +1,104 @@
 from manim import *
 import copy
 import networkx as nx
-from itertools import product
+from itertools import product, combinations
 from lib import Formula, BinaryTree
-
+import random
 from manim_voiceover import VoiceoverScene
 from manim_voiceover.services.recorder import RecorderService
 from manim_voiceover.services.gtts import GTTSService
 
+def generate_girth(n, girth):
+    outer_cycle = list(range(1, girth + 1))
+    edges = [(i, i % girth + 1) for i in outer_cycle]
+    cur_n = girth
+    while cur_n < n:
+        i = random.randint(0, len(outer_cycle) - 1)
+        il = outer_cycle[(i + len(outer_cycle) - 1) % len(outer_cycle)]
+        ir = outer_cycle[(i + len(outer_cycle) + 1) % len(outer_cycle)]
+        inner = [cur_n + i + 1 for i in range(girth - 3)]
+        cur_n += girth - 3
+        edges.extend([(il, inner[0]), (ir, inner[-1])] + list(zip(inner[:-1], inner[1:])))
+        outer_cycle = outer_cycle[:i] + inner + (outer_cycle[i+1:] if i < len(outer_cycle) - 1 else [])
+    return cur_n, edges
+        
+def color_graph_greedily(n, edges): #assuming 1-indexing of the nodes
+    colors = {i: -1 for i in range(1,n+1)}
+    colors[1] = 0
+    connect = [[] for i in range(n+1)]
+    for u, v in edges:
+        connect[u].append(v)
+        connect[v].append(u)
+    for i in range(2, n+1):
+        excluded = set()
+        for v in connect[i]:
+            excluded.add(colors[v])
+        for j in range(n):
+            if j not in excluded:
+                colors[i] = j
+                break
+        assert colors[i] != -1
+    return colors
+                
 
+class ColoringSlide(VoiceoverScene):
+    def construct(self):
+        self.set_speech_service(GTTSService())
+        caption = Tex("Chromatic number $\\chi(G)$")
+        random.seed(12345432)
+        n, edges = generate_girth(40, 5)
+        print(edges)
+        node_color = color_graph_greedily(n, edges)
+        pallette = [RED_C, BLUE_C, GREEN_C, YELLOW_C]
+        graph = Graph(list(range(1, n + 1)), edges, layout="kamada_kawai",
+						vertex_config={x: {"fill_color": pallette[node_color[x]]} for x in range(1, n + 1)},
+						layout_scale=2)
+        with self.voiceover(""" 
+                      The chromatic number of a graph is the smallest number of colors
+                      one needs to color the nodes of the graph such that no edge connects
+                      two nodes of the same color.
+                      """):
+            caption.move_to(UP * 3)
+            graph.next_to(caption, direction=DOWN)
+            self.play(Write(caption))
+            self.add(graph)
+            self.play(Wiggle(graph))
+        with self.voiceover("""
+							If the graph has chromatic number k, can we find a size big-O of k 
+                            subgraph with the same chromatic number?
+                            """):
+            question = Tex("Is there a subgraph $H$ of $G$ with $O(\\chi(G))$ nodes and $\\chi(H) = \\chi(G)$?")\
+                .scale(0.7).next_to(graph, direction=DOWN)
+            question.add_background_rectangle(BLACK, opacity=0.9)
+            self.add(question)
+        with self.voiceover("""
+							The answer is no, since graphs can have arbitrary large girth and chromatic number.
+                            For example the graph on the screen has chromatic number 3 and girth 5, so
+                            no graph of size 4 has cycles and thus have chromatic number 2.
+                            """):
+            answer = Tex("[Erd\\\"os, 1959] No, can have arbitrary large girth and chromatic number.").scale(0.7).next_to(question, direction=DOWN)
+            answer.add_background_rectangle(BLACK, opacity=0.9)
+            self.add(answer)
+            for subgraph in [[1,2,3,4], [5,6,7,8], [18,19,20,21]]: 
+                group = VGroup(*[graph[k] for k in subgraph], *[graph.edges[i,j] for i,j in edges if i in subgraph and j in subgraph])
+                self.play(Indicate(group))
+            
+			
+            
+class VertexCoverSlide(VoiceoverScene):
+    def construct(self):
+        self.set_speech_service(GTTSService())
+        with self.voiceover(""" 
+                      A vertex cover is a set of nodes such that every edge in the graph is
+                      incident to one of them
+                      """):
+            
+            
+            graph = Graph(list(range(10)), list(combinations(range(10), 2)), layout="circular")
+            self.play(Create(text))
+            self.add(graph)
+            
+    
 
 ################ OLD SLIDES FOR REFERENCE
 
@@ -121,7 +211,7 @@ class TreeLikeResolutionDef(VoiceoverScene, MovingCameraScene):
                 t += 1
                 cur = (cur-1)//2
             return t
-        def get_assignment(x):
+        def getssignment(x):
             cur = x
             result = [-1 for _ in range(n)]
             height = get_height(x) - 1
@@ -155,9 +245,9 @@ class TreeLikeResolutionDef(VoiceoverScene, MovingCameraScene):
                 edge_labels[-1], edge_labels[-2] = edge_labels[-2], edge_labels[-1]
                 edge_labels_map[e] = edge_labels[-1], edge_labels[-2]
             self.add(VGroup(*edge_labels))
-        fals_clauses_anim = []
+        fals_clausesnim = []
         new_clauses = []
-        clause_by_leaf = dict()
+        clausey_leaf = dict()
         for id, f_clause in enumerate(falsified_clause):
             dest = g.vertices[2**(n+1)-2-id]
             f_clause_new = f_clause.copy()
@@ -165,12 +255,12 @@ class TreeLikeResolutionDef(VoiceoverScene, MovingCameraScene):
             f_clause_new.rotate(PI/2)
             f_clause_new.next_to(dest, direction=DOWN)
             new_clauses.append(f_clause_new)
-            clause_by_leaf[2**(n+1) - 2 - id] = f_clause_new
-            fals_clauses_anim.append(ReplacementTransform(f_clause, f_clause_new))
+            clausey_leaf[2**(n+1) - 2 - id] = f_clause_new
+            fals_clausesnim.append(ReplacementTransform(f_clause, f_clause_new))
         with self.voiceover("For each leaf of the tree we find a clause that is falsified by"
                             + " the assignment of the branch ending in this leaf."):
             self.play(FadeOut(*clauses_to_fade))
-            self.play(*fals_clauses_anim)
+            self.play(*fals_clausesnim)
         with self.voiceover("Say, for the highlighted branch, we falsify a clause X five or X two"):
             # Select one branch and indicate it.
             leaf = 2**n + 2**n // 3
@@ -182,14 +272,14 @@ class TreeLikeResolutionDef(VoiceoverScene, MovingCameraScene):
             assignment.reverse()
             edges = list(zip(ids[:-1], ids[1:]))
             self.play(*[g.edges[e].animate.set(color=YELLOW) for e in edges])
-            srect_assign = SurroundingRectangle(texts[sum(2**i * j for i,j in enumerate(assignment))])
-            self.play(Indicate(clause_by_leaf[leaf]),
-                      Create(srect_assign))
+            srectssign = SurroundingRectangle(texts[sum(2**i * j for i,j in enumerate(assignment))])
+            self.play(Indicate(clausey_leaf[leaf]),
+                      Create(srectssign))
         ### Shrinking the tree
         nodes_to_remove = set()
         terminating_clause = [None for _ in range(2**(n+1)-1)]
         for node in g.vertices.keys():
-            assignment = get_assignment(node)
+            assignment = getssignment(node)
             found_clause = None
             found_clause_disp = None
             for clause, clause_disp in zip(falsified_clause_exp, falsified_clause):
@@ -225,7 +315,7 @@ class TreeLikeResolutionDef(VoiceoverScene, MovingCameraScene):
                             if we cut it as soon as the partial assignment we have falsifies some
                             clause.
                             """):
-            self.play(FadeOut(VGroup(*mobj_to_fade)), Uncreate(srect_assign), *[g.edges[e].animate.set(color=WHITE) for e in edges], run_time=0.5)
+            self.play(FadeOut(VGroup(*mobj_to_fade)), Uncreate(srectssign), *[g.edges[e].animate.set(color=WHITE) for e in edges], run_time=0.5)
             self.play(FadeOut(*new_clauses))
 
         movement_to_play = []
