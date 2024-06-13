@@ -148,8 +148,74 @@ class QueryComplexityIntroSlide(VoiceoverScene):
         self.set_speech_service(GTTSService())
         caption = Text("Query Complexity").move_to(UP * 3) 
         with self.voiceover("""
-							We studied condensation of query complexity.
+                            Query complexity of a boolean function is the number of probes
+                            one has to make in order to compute the value of the function,
+                            equivalently, the smallest depth of a decision tree computing 
+                            the function.
                             """):
-            self.play(Write(caption))      
+            q_def = Tex("""
+                        \\textbf{Definition}. Query complexity of a function """, """$f\colon \\{0,1\\}^n \\to \mathcal{O}$ """,
+                                            """is the \emph{depth} of decision tree computing $f$.
+                        """).scale_to_fit_width(9)
+            self.play(Write(q_def), FadeIn(caption))
+        with self.voiceover("""Let us illustrate this notion with a simple example."""):
+            self.play(q_def.animate.shift(UP * 2))
+        tree_or = BinaryTree(13, tp="bamboo")
+        for i in range(tree_or.n):
+            tree_or.label[i] = tree_or.height[i] + 1
+        tree_or.leaf_labels = {i: int(any(j == 1 for j in tree_or.get_assignment(i))) for i in tree_or.leaves}
+        g_or = Graph(range(tree_or.n), tree_or.get_edges(),
+                  layout=tree_or.layout,
+                  labels=tree_or.get_tex_labels()).scale_to_fit_width(8).center().shift(DOWN * 0.5)
+        labels_or = [t for t in tree_or.labels_for_graph(g_or)]
+        with self.voiceover("This decision tree computes the function OR."):
+            self.play(Create(g_or), *[Create(t) for t in labels_or])
+        or_formula = []
+        for i in range(tree_or.n):
+            if i not in tree_or.leaves:
+                if len(or_formula) > 0:
+                    or_formula.append("\\lor")
+                or_formula.append("x_{" + str(tree_or.label[i]) + "}")
+        or_formula_disp = MathTex(*or_formula).next_to(g_or, direction=DOWN)
+        with self.voiceover("""The disjunction of all the variables."""):
+            self.play(Write(or_formula_disp))
+        depth_indicator = Line(start=[g_or.get_left()[0],
+                                      g_or.vertices[0].get_center()[1], 0],
+                               end=[g_or.get_left()[0],
+                                    g_or.get_bottom()[1], 0])
+        depth_text = Tex("depth=$" + str(max(tree_or.height)) + "$").rotate(PI/2).scale(0.5)
+        depth_text.move_to(depth_indicator.get_center() + LEFT * 0.3)
+        with self.voiceover("""The depth of this tree equals the number of the variables."""):
+            self.play(Create(depth_indicator), Write(depth_text))
+        statement_text = Tex(""" \\textbf{Fact}. Query complexity of $\\bigvee_{i=1}^n x_i$ 
+                                                 is \emph{exactly} $n$.
+                             """).scale(0.5).shift(UP)
+        with self.voiceover("""This is not very hard to show, that this depth is required, 
+                             no matter what tree we use."""):
+            self.play(g_or.animate.set_opacity(0.1), *[FadeOut(t) for t in labels_or], FadeOut(depth_text, depth_indicator),
+                       FadeIn(statement_text))
+        with self.voiceover("""
+                            Whatever bits we query, if we only get zeroes, the value
+                            of the function is not fixed until the very end, if it
+                            is zero, then the OR is zero, and if it is one, the OR is one.
+                            """):
+            cur_text = ["*" for _ in range(6)]
+            order = [5,2,3,0,1]
+            last = list(set(range(6)).difference(set(order)))[0]
+            cur_text_disp = Tex(*cur_text).scale_to_fit_width(5)
+            self.play(FadeIn(cur_text_disp))
+            for u in order:
+                rect = SurroundingRectangle(cur_text_disp[u])
+                self.play(Create(rect))
+                cur_text[u] = "0"
+                new_text_disp = Tex(*cur_text).scale_to_fit_width(5)
+                self.play(Uncreate(rect), ReplacementTransform(cur_text_disp, new_text_disp))
+                cur_text_disp = new_text_disp
+            for val in ["0", "1"]:
+                cur_text[last] = val
+                new_text_disp = Tex(*cur_text).scale_to_fit_width(5)
+                self.play(ReplacementTransform(cur_text_disp, new_text_disp))
+                cur_text_disp = new_text_disp
+
     
 

@@ -29,8 +29,10 @@ class Formula:
         return None
 
 class BinaryTree:
-    def __init__(self, n : int, tp: str = "random"):
+    def __init__(self, n : int, tp: str = "random", label_range: int = -1):
         self.n = n
+        self.label_range = n // 2 if label_range == -1 else label_range
+        label_range = self.label_range
         assert n % 2 == 1
         self.parent = [-1 for _ in range(n)]
         self.leaf_labels = dict()
@@ -62,7 +64,7 @@ class BinaryTree:
         self.height = [-1 for _ in range(n)]
         self.bit = [-1 for _ in range(n)]
         self.height[0] = 0
-        self.label = [random.randint(1, n//2) for _ in range(n)]
+        self.label = [random.randint(1, label_range) for _ in range(n)]
         self.layout = dict()
         self.layout[0] = np.array([0,0,0])
         for v in range(1, self.n):
@@ -75,9 +77,9 @@ class BinaryTree:
             self.height[v] = self.height[leaf] + 1
             self.bit[v] = v & 1
             self.layout[v] = self.layout[leaf] + DOWN * 1.5 +\
-                (LEFT if self.bit[v] == 0 else RIGHT) * (n * 0.5**self.height[v])
+                (LEFT if self.bit[v] == 0 else RIGHT) * (n * 0.53**self.height[v])
             while self.label[v] in label_set:
-                self.label[v] = random.randint(1, max(n//2, self.height[v] + 1))
+                self.label[v] = random.randint(1, max(label_range, self.height[v] + 1))
         if tp == "full":
             for i in range(self.n):
                 self.layout[i][0] *= 0.2
@@ -113,4 +115,10 @@ class BinaryTree:
                              if i in self.leaf_labels 
                              else "\\bot", color=BLACK) 
                 for i in range(self.n)}
-
+    
+    def labels_for_graph(self, graph):
+        for u, v in self.get_edges():
+            t = self.bit[u]
+            yield Tex("$" + str(t) + "$").move_to(graph.edges[u,v].get_center())\
+                .scale(0.5).add_background_rectangle(BLACK, opacity=0.9)
+	
