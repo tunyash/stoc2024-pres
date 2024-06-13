@@ -148,9 +148,10 @@ class QueryComplexityIntroSlide(VoiceoverScene):
         self.set_speech_service(GTTSService())
         caption = Text("Query Complexity").move_to(UP * 3) 
         with self.voiceover("""
-                            Query complexity of a boolean function is the number of probes
-                            one has to make in order to compute the value of the function,
-                            equivalently, the smallest depth of a decision tree computing 
+                            The first computation complexity measure we will try to condense
+                            is query complexity: the number of bit probes
+                            one has to make in order to compute the value of the function.
+                            Equivalently, the smallest depth of a decision tree computing 
                             the function.
                             """):
             q_def = Tex("""
@@ -187,7 +188,7 @@ class QueryComplexityIntroSlide(VoiceoverScene):
         depth_text.move_to(depth_indicator.get_center() + LEFT * 0.3)
         with self.voiceover("""The depth of this tree equals the number of the variables."""):
             self.play(Create(depth_indicator), Write(depth_text))
-        statement_text = Tex(""" \\textbf{Fact}. Query complexity of $\\bigvee_{i=1}^n x_i$ 
+        statement_text = Tex(""" \\textbf{Fact}. Query complexity of ${\\ OR}_n(x) := \\bigvee_{i=1}^n x_i$ 
                                                  is \emph{exactly} $n$.
                              """).scale(0.5).shift(UP)
         with self.voiceover("""This is not very hard to show, that this depth is required, 
@@ -218,4 +219,57 @@ class QueryComplexityIntroSlide(VoiceoverScene):
                 cur_text_disp = new_text_disp
 
     
-
+class QueryComplexityCondensationSlide(VoiceoverScene):
+    def construct(self):
+        random.seed(123323)
+        self.set_speech_service(GTTSService())
+        caption = Text("Condensing Query Complexity").move_to(UP * 3) 
+        with self.voiceover("""
+			Suppose a function f has query complexity k then can one find a 
+			subset of inputs of size only dependent on k such that within this 
+			subset the query complexity is still k?
+                       """):
+             condensation_def = Tex("\\textbf{Question}: "
+                                    "$f\colon \\{0,1\\}^n \\to \\{0,1\\}$ has query complexity $k$."
+                                    " Find $S \\subseteq \\{0,1\\}^n$ such that $f|_S$ retains query"
+                                    " complexity $k$ and $|S| = 2^{O(k)}$").scale_to_fit_width(9).next_to(caption, direction=DOWN)
+             self.play(FadeIn(caption), Write(condensation_def))
+        with self.voiceover("""
+                            If query complexity is maximal, then the function is already condensed,
+                            so let us look at some example of intermediate query complexity.
+                            """):
+            pass
+        with self.voiceover("""
+                            One such function is called sink, the input encodes directions of edges
+                            in a complete directed graph (known as tournament graph). 
+                            """):
+            sink_def = Tex("\\textbf{Example}: $\\textsc{Sink}\\colon \\{0,1\\}^{\\binom{n}{2}} \\to \\{0,1\\}$ is defined"
+                           " such that $\\textsc{Sink}(G) = 1$ iff $G$ has a sink.")\
+                            .scale_to_fit_width(9).next_to(condensation_def, direction=DOWN)
+            edges = [(i, j) if random.randint(1,2) == 1 or j == 3 else (j, i) 
+                                       for i,j in combinations(range(7), 2)]
+            sink_graph = DiGraph(list(range(7)), 
+                                 edges,
+                                 layout="circular", layout_scale=3, 
+                                 edge_config={"tip_config": {"tip_length": 0.75, "tip_width": 0.2}})\
+                                 .scale(0.5).next_to(sink_def, direction=DOWN)
+            self.play(Write(sink_def), Create(sink_graph))
+            
+        
+        with self.voiceover("""
+                            The function should return 1 if and only if the graph has a sink, i.e. 
+                            there is a node with all edges directed towards it.
+                            """):
+            animations = []
+            for i in range(7):
+                if i == 3:
+                    continue
+                edge_cp = sink_graph.edges[i,3].copy()
+                edge_cp.stroke_color = RED_C
+                edge_cp.color = RED_C
+                animations.append(ReplacementTransform(sink_graph.edges[(i,3)], edge_cp))
+            self.play(*animations)
+            lbrace = MathTex("\\textsc{Sink}\\Big(").next_to(sink_graph, direction=LEFT)
+            rbrace = MathTex("\\Big) = 1").next_to(sink_graph, direction=RIGHT)
+            self.play(FadeIn(lbrace, rbrace))
+            
