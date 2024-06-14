@@ -91,15 +91,16 @@ class ColoringSlide(Slide):
     #                     no graph of size 4 has cycles and thus have chromatic number 2.
     #                     """):
         self.next_slide()
+        for subgraph in [[1,2,3,4], [5,6,7,8], [18,19,20,21]]: 
+            group = VGroup(*[graph[k] for k in subgraph], *[graph.edges[i,j] for i,j in edges if i in subgraph and j in subgraph])
+            self.play(Indicate(group))
+            self.next_slide()
         answer = Tex("[Erd\\\"os, 1959] \\textbf{No}, can have arbitrary large girth and chromatic number.")\
             .scale(0.7).next_to(question, direction=DOWN)
         answer.add_background_rectangle(BLACK, opacity=0.9)
         self.play(Write(answer))
         self.next_slide()
-        for subgraph in [[1,2,3,4], [5,6,7,8], [18,19,20,21]]: 
-            group = VGroup(*[graph[k] for k in subgraph], *[graph.edges[i,j] for i,j in edges if i in subgraph and j in subgraph])
-            self.play(Indicate(group))
-            self.next_slide()
+        
         
 
             
@@ -135,7 +136,7 @@ class VertexCoverSlide(Slide):
             
         self.play(*animations) 
         self.next_slide()
-        question = Tex("Is there a subgraph of size $O(k^2)$ that has a vertex cover $k$?").next_to(graph, direction=DOWN)
+        question = Tex("Is there a subgraph of size $f(k)$ that has a vertex cover $k$?").next_to(graph, direction=DOWN)
         # with self.voiceover("""
         #                     Can we condense (or locally witness) vervex cover? For example,
         #                     is there a subgraph of size depending only on k and the same vertex cover?
@@ -180,7 +181,7 @@ class QueryComplexityIntroSlide(Slide):
         q_def = Tex("""
                         \\textbf{Definition}. Query complexity of a function """, """$f\colon \\{0,1\\}^n \\to \mathcal{O}$ """,
                                             """is the \emph{depth} of decision tree computing $f$.
-                        """).scale_to_fit_width(9)
+                        """).scale_to_fit_width(11)
         self.play(Write(q_def), FadeIn(caption))
         self.next_slide()
         # with self.voiceover("""Let us illustrate this notion with a simple example."""):
@@ -195,8 +196,7 @@ class QueryComplexityIntroSlide(Slide):
                   labels=tree_or.get_tex_labels()).scale_to_fit_width(8).center().shift(DOWN * 0.5)
         labels_or = [t for t in tree_or.labels_for_graph(g_or)]
         # with self.voiceover("This decision tree computes the function OR."):
-        self.play(Create(g_or), *[Create(t) for t in labels_or])
-        self.next_slide()
+        
         or_formula = []
         for i in range(tree_or.n):
             if i not in tree_or.leaves:
@@ -207,21 +207,15 @@ class QueryComplexityIntroSlide(Slide):
         # with self.voiceover("""The disjunction of all the variables."""):
         self.play(Write(or_formula_disp))
         self.next_slide()
-        depth_indicator = Line(start=[g_or.get_left()[0],
-                                      g_or.vertices[0].get_center()[1], 0],
-                               end=[g_or.get_left()[0],
-                                    g_or.get_bottom()[1], 0])
-        depth_text = Tex("depth=$" + str(max(tree_or.height)) + "$").rotate(PI/2).scale(0.5)
-        depth_text.move_to(depth_indicator.get_center() + LEFT * 0.3)
-        # with self.voiceover("""The depth of this tree equals the number of the variables."""):
-        self.play(Create(depth_indicator), Write(depth_text))
+        self.play(Create(g_or), *[Create(t) for t in labels_or])
         self.next_slide()
-        statement_text = Tex(""" \\textbf{Fact}. Query complexity of ${\\ OR}_n(x) := \\bigvee_{i=1}^n x_i$ 
+        
+        statement_text = Tex(""" \\textbf{Fact}. Query complexity of ${\\rm OR}_n(x) := \\bigvee_{i=1}^n x_i$ 
                                                  is \emph{exactly} $n$.
-                             """).scale(0.5).shift(UP)
+                             """).scale(0.7).shift(UP)
         # with self.voiceover("""This is not very hard to show, that this depth is required, 
                             #  no matter what tree we use."""):
-        self.play(g_or.animate.set_opacity(0.1), *[FadeOut(t) for t in labels_or], FadeOut(depth_text, depth_indicator),
+        self.play(g_or.animate.set_opacity(0.1), *[FadeOut(t) for t in labels_or],
                        FadeIn(statement_text))
         self.next_slide()
         # with self.voiceover("""
@@ -253,7 +247,7 @@ class QueryComplexityIntroSlide(Slide):
     
 class QueryComplexityCondensationSlide(Slide):
     def construct(self):
-        random.seed(123323)
+        random.seed(123325)
         caption = Text("Condensing Query Complexity").move_to(UP * 3) 
         # with self.voiceover("""
         #     Suppose a function f has query complexity k then can one fix all-but big-O of k
@@ -261,7 +255,7 @@ class QueryComplexityCondensationSlide(Slide):
         #                """):
         condensation_def = Tex("\\textbf{Question}: "
                                 "$f\colon \\{0,1\\}^n \\to \\{0,1\\}$ has query complexity $k$."
-                                " Find $\\rho \\subseteq \\{0,1, *\\}^n$ with $\\rho^{-1}(*) = O(k)$ "
+                                " Find $\\rho \\subseteq \\{0,1, *\\}^n$ with $O(k)$ stars "
                                 "such that $f|_{\\rho}$ retains query complexity $k$.")\
                                 .scale_to_fit_width(9).next_to(caption, direction=DOWN)
         self.play(FadeIn(caption), Write(condensation_def))
@@ -280,6 +274,12 @@ class QueryComplexityCondensationSlide(Slide):
                         .scale_to_fit_width(9).next_to(condensation_def, direction=DOWN)
         edges = [(i, j) if (random.randint(1,2) == 1 or j == 3) and (not i == 3) else (j, i) 
                                     for i,j in combinations(range(7), 2)]
+        not3 = [i for i in range(7) if i != 3]
+        for i, j in zip(not3, not3[1:] + [not3[0]]):
+            for t, e in enumerate(edges):
+                if e == (j,i):
+                    edges[t] = (i,j)
+
         sink_graph = DiGraph(list(range(7)), 
                                 edges,
                                 layout="circular", layout_scale=1.5, 
@@ -328,33 +328,34 @@ class QueryComplexityCondensationSlide(Slide):
                     ham_path = list(zip([p[-1]] + p[:-1], p))
                     break
         animations = []
+        to_remove = []
+        to_remove_later = []
         for e in ham_path:
             edge_cp = sink_graph.edges[e].copy()
             edge_cp.stroke_color = GREEN_C
             edge_cp.color = GREEN_C
+            edge_cp.stroke_width *= 2
+            to_remove.append(sink_graph.edges[e])
+            to_remove_later.append(edge_cp)
             animations.append(ReplacementTransform(sink_graph.edges[e], edge_cp))
-        for e in edges:
-            if e in ham_path:
-                continue
-            animations.append(sink_graph.edges[e].animate.fade(0.8))
+ 
         for i in range(7):
             if i == 3:
                 continue
-            edge_cp = Line(sink_graph[i].get_center(), sink_graph[3].get_center(), stroke_color=YELLOW_C, opacity=0.9)
+            edge_cp = Line(sink_graph[i].get_center(), sink_graph[3].get_center(), stroke_color=YELLOW_C).set_opacity(0.9)
             edge_cp.z_index = -100
-            animations.append(FadeOut(sink_graph.edges[(i,3)]))
-            animations.append(FadeIn(edge_cp))
-        self.play(*animations, FadeOut(lbrace, rbrace))
+            to_remove.append(sink_graph.edges[i,3])
+            to_remove_later.append(edge_cp)
+            animations.append(ReplacementTransform(sink_graph.edges[(i,3)],edge_cp))
         one = Text("1")
-        self.play(FadeIn(one.scale(0.7).next_to(sink_graph[3], direction=UP)))
+        self.play(*animations, FadeOut(lbrace, rbrace), FadeIn(one.scale(0.7).next_to(sink_graph[3], direction=UP)))
+        self.remove(*to_remove)
         self.next_slide()
     # with self.voiceover("""
     #                     The query complexity of the restricted function is exactly n minus one
     #                     since it is equivalent to the OR function up to flipping the signs of some bits.
     #                     """):
-        answer = Tex("Hence for \\textsc{Sink} the condensing restriction $\\rho$ is any restriction"
-                        " of the edges $\\binom{\{2,\dots,n\}}{2}$"
-                        " that fixes a cycle over all nodes.").scale_to_fit_width(9).next_to(sink_qc, direction=DOWN)
+        answer = Tex("Can condense \\textsc{Sink} by restricting all edges non-incident to $1$.").scale_to_fit_width(10).next_to(sink_qc, direction=DOWN)
         self.play(Write(answer))
         self.next_slide()
     # with self.voiceover("""
@@ -371,6 +372,7 @@ class QueryComplexityCondensationSlide(Slide):
                         "the query complexity of $f|_{\\rho}$ is $\\tilde{O}(k^{3/4})$.")\
                         .scale_to_fit_width(target.width).next_to(target, direction=DOWN)
         target.z_index = 1e9
+        self.remove(*to_remove_later)
         self.play(FadeOut(sink_graph), FadeOut(one), ReplacementTransform(condensation_def, target))
         self.next_slide()
     # with self.voiceover("""
@@ -405,8 +407,8 @@ class CommunicationComplexityIntro(Slide):
         self.play(Write(fdef), Write(alice), Write(bob))
         self.next_slide()
         
-        path1 = CubicBezier(alice.get_center(), DOWN, LEFT, bob.get_center())
-        path2 = CubicBezier(bob.get_center(), DOWN, RIGHT, alice.get_center())
+        path1 = CubicBezier(alice.get_bottom(), DOWN, LEFT, bob.get_left())
+        path2 = CubicBezier(bob.get_bottom(), DOWN, RIGHT, alice.get_right())
         
         for curp, mlen in [(path1, 10), (path2, 15), (path1, 10)]:
             anims = []
@@ -418,7 +420,7 @@ class CommunicationComplexityIntro(Slide):
                 anims.append(anim)
             g = AnimationGroup(anims, run_time=1, lag_ratio=0.1)
             self.play(g)
-            self.play(*[FadeOut(t) for t in letters])
+            self.play(*[FadeOut(t, run_time=0.1) for t in letters])
             self.next_slide()
             
         """
@@ -451,6 +453,8 @@ class CommunicationComplexityIntro(Slide):
         anims = []
         for i, j in product(range(N), repeat=2):
             anims.append(FadeIn(digit_matrix[i][j]))
+        # alice_to_row = CubicBezier(alice.get_bottom(), DOWN, RIGHT, digit_matrix[N//2][0].get_left())
+        # bob_to_column = CubicBezier(bob.get_left(), RIGHT, UP, digit_matrix[N-1][N//2].get_top())
         self.play(*anims)
         self.next_slide()
         """
@@ -458,6 +462,7 @@ class CommunicationComplexityIntro(Slide):
         sends zero and the values for which she sends one, the bit sent by Bob further partitions.
         This process terminates when the matrix is partitioned into monochromatic rectangles.
         """
+        #self.play(Uncreate(alice_to_row), Uncreate(bob_to_column))
         palette = [DARK_BLUE, GREEN_C, RED_E, BLACK, DARK_BROWN, DARK_GRAY, ORANGE]
         oanimb = []
         for i in range(1, 7):
@@ -481,12 +486,12 @@ class CommunicationComplexityIntro(Slide):
         Since each monochromatic rectangle has rank 1, we have that the deterministic communication 
         cost is at most the log of rank of the matrix.
         """
-        M = MathTex("M=").next_to(digit_matrix[7][0], direction=LEFT)
-        logrank = MathTex("{\\rm CC}(M) \\ge \\log \\#\\text{rectangles} \\ge \\log{\\rm rk}(M)")\
-                  .scale_to_fit_width(7).next_to(digit_matrix[0][7], direction=DOWN)
+        M = MathTex("M=").next_to(digit_matrix[N//2][0], direction=LEFT)
+        logrank = MathTex("{\\rm D}(M) \\ge \\log \\#\\text{rectangles} \\ge \\log{\\rm rk}(M)")\
+                  .scale_to_fit_width(7).next_to(digit_matrix[0][N//2], direction=DOWN)
         self.play(Write(M), Write(logrank))
         self.next_slide()
-        logrankconj = Tex("{\\bf Log-Rank Conjecture}: $\\exists C$ such that ${\\rm D}^{cc}(M) \\le (\\log {\\rm rk} (M))^C$.")\
+        logrankconj = Tex("{\\bf Log-Rank Conjecture}: $\\exists C$ such that ${\\rm D}(M) \\le (\\log {\\rm rk} (M))^C$.")\
             .next_to(logrank, direction=DOWN).scale_to_fit_width(10)
         self.play(Write(logrankconj))
         self.next_slide()
@@ -494,10 +499,10 @@ class CommunicationComplexityIntro(Slide):
         We say that a communication complexity k matrix can be losslessly condensed if there is a 
         2 to the k by 2 to the k submatrix which retains communication complexity k.
         """
-        condense_tex = Tex("{\\bf Definition}: $M$ with ${\\rm D}^{cc}(M) = k$"
+        condense_tex = Tex("{\\bf Definition}: $M$ with ${\\rm D}(M) = k$"
                            " can be losslessly condensed if $\\exists$ $2^{O(k)} \\times 2^{O(k)}$ submatrix $M'$"
-                           " with ${\\rm D}^{cc}(M') = \\Omega(k)$.")\
-                            .scale_to_fit_width(11).next_to(digit_matrix[N-1][7], direction=UP)\
+                           " with ${\\rm D}(M') = \\Omega(k)$.")\
+                            .scale_to_fit_width(12).next_to(digit_matrix[N-1][7], direction=UP)\
                             .add_background_rectangle(DARK_BROWN, opacity=1)
         rect = Rectangle(WHITE, height=1.5, width=1.5).center().shift(DOWN*0.3).set_fill(color=WHITE, opacity=0.6)
         mprime_label = MathTex("M'").move_to(rect.get_center()).set_color(BLACK)
@@ -510,12 +515,12 @@ class CommunicationComplexityIntro(Slide):
         Indeed Hrubes independently confirms that communication complexity can be weakly condensed. 
         """
         hrubes_result = Tex("{\\bf Theorem} \\texttt{[Hrubes, 2024]} Can find $2^{\\sqrt{k}} \\times 2^{\\sqrt{k}}$ submatrix $M'$"
-                            " with ${\\rm D}^{cc}(M') = \\Omega(\\sqrt{k})$")\
-                                .scale_to_fit_width(11).next_to(condense_tex,direction=DOWN)\
+                            " with ${\\rm D}(M') = \\Omega(\\sqrt{k})$")\
+                                .scale_to_fit_width(12).next_to(condense_tex,direction=DOWN)\
                                 .add_background_rectangle(DARK_BLUE, opacity=1)
         self.play(Write(hrubes_result))
         self.next_slide()
-        open_problem = Tex("{\\bf Open}: Is ${\\rm D}^{cc}$ losslessly condensable?").scale_to_fit_width(11)\
+        open_problem = Tex("{\\bf Open}: Is ${\\rm D}$ losslessly condensable?").scale_to_fit_width(11)\
                         .next_to(hrubes_result, direction=DOWN).add_background_rectangle(DARK_GRAY, opacity=1)
         self.play(Write(open_problem))
         self.next_slide()
@@ -545,4 +550,70 @@ class RandomizedCommunication(Slide):
         self.next_slide(loop=True)
         self.play(text.animate.shift(RIGHT*text.width/6).set_rate_func(rate_functions.linear), duration=3)
         self.next_slide()
+        N = 15
+        digit_matrix = [[Tex("\\tiny\\texttt{" + str(int(i <= j)) + "}")
+                         .move_to(UP / 5 * (i - 5) + RIGHT / 5 * (j - 5) + DOWN) for j in range(N)] 
+                         for i in range(N)]
+        gt_tex = MathTex("\\textsc{Gt}_N = ").next_to(digit_matrix[7][0], direction=LEFT)
+        self.play(FadeIn(*[digit_matrix[i][j] for i,j in product(range(N), repeat=2)]), Write(gt_tex))
+        self.next_slide()
+        known = Tex("{\\bf Theorem:} \\texttt{[Nisan, 1993]} ${\\rm R}(\\textsc{Gt}_N) = O(\\log \\log N)$;~~~~"
+                    "${\\rm D}(\\textsc{Gt}_N) = \\Theta(\\log N)$").scale(0.7).next_to(digit_matrix[0][7], direction=DOWN)
+        self.play(Write(known))
+        self.next_slide()
+        rect = Rectangle(WHITE, height=1.5, width=1.5).center().shift(DOWN*0.3).set_fill(color=WHITE, opacity=0.8)
+        mprime_label = MathTex("M'").move_to(rect.get_center()).set_color(BLACK)
+        self.play(Create(rect), Write(mprime_label))
+        self.next_slide()
+        mprime_size = Tex("$|M'| = 2^{{\\rm R}({\\textsc{Gt}_N})} = O(\\log N)$")\
+            .scale(.6).next_to(digit_matrix[N//2][N-1], direction=RIGHT)
+        rcc_mprime = Tex("${\\rm R}(M') = O(\\log \\log |M'|) = O(\\log \\log \\log N)$").next_to(known, direction=DOWN)
+        self.play(Write(mprime_size), Write(rcc_mprime))
+        self.next_slide()
+        hhh22 = Tex("[\\texttt{HHH 2022}]: ${\\rm R}(M) = (\\log N)^{0.9}$ and yet ${\\rm R}(M') = O(1)$.")\
+            .add_background_rectangle(color=DARK_BROWN).scale_to_fit_width(12)
+        self.play(Write(hhh22))
+        self.next_slide()
+
+
+class CondensingRcc(Slide):
+    def construct(self):
+        random.seed(123323)
+        caption = Tex("When ${\\rm R}$ is condensable").move_to(UP * 3.5) 
+        """
+        What if Alice and Bob are allowed to use randomness in their computations?                    
+        """
+        self.play(Write(caption))
+        self.next_slide()
+        larc = Tex("{\\bf Log Approximate Rank Conjecture}: ${\\rm R}(M) = (\\log \\tilde{\\rm rk}(M))^C$ for some $C$")\
+            .scale_to_fit_width(11).next_to(caption, direction=DOWN)
+        self.play(Write(larc))
+        self.next_slide()
+        cms2020 = Tex("[\\texttt{CMS 2020}]: False for $F(x,y) := \\textsc{Sink}_n(x \\oplus y)$.\\\\"
+                       "$\\tilde{\\rm rk}(F) = O(n^4); ~~{\\rm R}(F) = \Omega(n)$.").next_to(larc, direction=DOWN)
+        self.play(Write(cms2020))
+        self.next_slide()
+        result = Tex("{\\bf Theorem}: \\texttt{[this work]} There is a $2^{O(n)} \\times 2^{O(n)}$ submatrix $F'$ of $F$"
+                     " that has $\\tilde{\\rm rk}(F') = O(n^3);$ and ${\\rm R}(F') = \Omega(n)$.")\
+                     .add_background_rectangle(color=DARK_BROWN).next_to(cms2020, direction=DOWN).scale_to_fit_width(11)
+        self.play(Write(result))
+        self.next_slide()
+
+class Conclusion(Slide):
+    def construct(self):
+        random.seed(123323)
+        full_slide = Tex("""
+                        {\\bf Conclusion and Open Problems}
+                        \\begin{itemize}"""
+                        """ \\item Query complexity is not losslessly condensable by restriction. Uses \\texttt{[ABK 2016, Cheatsheets]}"""
+                        """ \\item Randomized communication complexity is not even weakly condensable. \\texttt{[HHH 2022]}"""
+                        """ \\item Sometimes randomized communication is condensable. Uses \\emph{Shearer Extractors}."""
+                        """ \\item Deterministic communication is weakly condensable. \\texttt{[Hrubes 2024]}."""
+                        """ \\item {\\bf Open:} Is deterministic communication losslessly condensable?"""
+                        """\\end{itemize}
+                        """).scale_to_fit_width(12)
+        self.play(Write(full_slide))
+        self.next_slide()
+        
+
 
