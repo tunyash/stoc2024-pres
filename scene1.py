@@ -165,8 +165,6 @@ class VertexCoverSlide(Slide):
         self.next_slide()
 
 
-
-
 class QueryComplexityIntroSlide(Slide):
     def construct(self):
         random.seed(123323)
@@ -257,7 +255,7 @@ class QueryComplexityCondensationSlide(Slide):
                                 "$f\colon \\{0,1\\}^n \\to \\{0,1\\}$ has query complexity $k$."
                                 " Find $\\rho \\subseteq \\{0,1, *\\}^n$ with $O(k)$ stars "
                                 "such that $f|_{\\rho}$ retains query complexity $k$.")\
-                                .scale_to_fit_width(9).next_to(caption, direction=DOWN)
+                                .scale_to_fit_width(11).next_to(caption, direction=DOWN)
         self.play(FadeIn(caption), Write(condensation_def))
         self.next_slide()
     # with self.voiceover("""
@@ -271,7 +269,7 @@ class QueryComplexityCondensationSlide(Slide):
     #                     """):
         sink_def = Tex("\\textbf{Example}: $\\textsc{Sink}\\colon \\{0,1\\}^{\\binom{n}{2}} \\to \\{0,1\\}$ is defined"
                         " such that $\\textsc{Sink}(G) = 1$ iff $G$ has a sink.")\
-                        .scale_to_fit_width(9).next_to(condensation_def, direction=DOWN)
+                        .scale_to_fit_width(11).next_to(condensation_def, direction=DOWN)
         edges = [(i, j) if (random.randint(1,2) == 1 or j == 3) and (not i == 3) else (j, i) 
                                     for i,j in combinations(range(7), 2)]
         not3 = [i for i in range(7) if i != 3]
@@ -358,35 +356,129 @@ class QueryComplexityCondensationSlide(Slide):
         answer = Tex("Can condense \\textsc{Sink} by restricting all edges non-incident to $1$.").scale_to_fit_width(10).next_to(sink_qc, direction=DOWN)
         self.play(Write(answer))
         self.next_slide()
-    # with self.voiceover("""
-    #                     Therefore for Sink the answer to our initial question is positive, query complexity can be 
-    #                     condensed by restriction. So is this true in general?
-    #                     """):
-        condensation_def.add_background_rectangle(color=DARK_BLUE, opacity=0.95)
-        target = condensation_def.copy()
-        target.scale(1.3)
-        target.center()
+        
+        self.remove(*to_remove_later, *[e for e in sink_graph.edges], *[v for v in sink_graph], one)
+        self.play(FadeOut(sink_def), FadeOut(sink_qc), answer.animate.next_to(condensation_def, direction=DOWN, buff=0.5))
+        self.next_slide()
+        sensitivity_def = Tex("""\\textbf{Definition.} Sensitivity ${\\rm s}(f)$ is the degree of graph $(\{0,1\}^n, \{(x, x + e_i) \mid f(x) \\neq f(x + e_i)\})$.
+                              """).next_to(answer, direction=DOWN, buff=0.7).scale_to_fit_width(9)
+        self.play(FadeIn(sensitivity_def))
+        self.next_slide()
+        condensing_s = Tex("$f$ can be condensed to exactly ${\\rm s}(f)$ variables.").next_to(sensitivity_def, direction=DOWN, buff=0.7)
+        self.play(FadeIn(condensing_s))
+        self.next_slide()
+        condensing_d = Tex("$f$ can be condensed to exactly ${\\rm deg}(f)$ variables.").next_to(condensing_s, direction=DOWN, buff=0.7)
+        self.play(FadeIn(condensing_d))
+        self.next_slide()
+        
         answer = Tex("\\textbf{Theorem}: \\\\"
                         "There exists $f\\colon \\{0,1\\}^n \\to \\{0,1\\}$ with query complexty $k$ "
                         "such that for all $\\rho$ with $|\\rho^{-1}(*)| = O(k)$ "
-                        "the query complexity of $f|_{\\rho}$ is $\\tilde{O}(k^{3/4})$.")\
-                        .scale_to_fit_width(target.width).next_to(target, direction=DOWN)
-        target.z_index = 1e9
-        self.remove(*to_remove_later)
-        self.play(FadeOut(sink_graph), FadeOut(one), ReplacementTransform(condensation_def, target))
-        self.next_slide()
-    # with self.voiceover("""
-    #                     Our main result here is that it is not, there is a function of query
-    #                     complexity k such that for all restrictions rho that leave big-O of k 
-    #                     variables free the query complexity of the restricted version of the
-    #                     function falls polynomially.
-    #                     """):
-        
-        answer.add_background_rectangle(DARK_BROWN, opacity=0.95)
+                        "the query complexity of $f|_{\\rho}$ is $\\tilde{O}(k^{2/3})$.")\
+                            .center().scale_to_fit_width(12).add_background_rectangle(color=DARK_BLUE, opacity=1)
         self.play(Write(answer))
         self.next_slide()
+        cheatsheets = Text("Cheatsheets", color=BLACK)
+        cheatsheets.move_to(answer.get_top() + RIGHT * (answer.width / 2 - cheatsheets.width/2) + DOWN * cheatsheets.height / 2)\
+            .add_background_rectangle(color=YELLOW_C, opacity=1)
+        self.play(Write(cheatsheets))
+        self.next_slide()
+      
+class CondensingWithParity(Slide):
+    def construct(self):
+        random.seed(123323)
+        caption = Text("Condensing with Expander").move_to(UP * 3.5)  
+        self.play(FadeIn(caption))
+        self.next_slide()
+        nodes_l = ["y_" + str(i) for i in range(1,10)]
+        nodes_r = ["x_" + str(i) for i in range(1,6)]
+        expander = Graph(nodes_l + nodes_r, [(nodes_l[random.randrange(0, len(nodes_l))], nodes_r[random.randrange(0, len(nodes_r))]) for _ in range(30)],
+                         layout={u: LEFT * 4 + UP * 3.5 + DOWN * (int(u[2])-int('0')) * 0.8 + LEFT * (2 if u[0] == 'x' else 0) for u in nodes_l + nodes_r},
+                         labels={u: MathTex(u if u[0] == 'x' else "\\oplus", color=BLACK) for u in nodes_l + nodes_r})
+        self.play(Create(expander))
+        self.next_slide()
+        self.play(expander.animate.add_vertices("f", positions={"f": LEFT * 2}, labels={"f": MathTex("F", color=BLACK)}))
+        self.play(expander.animate.add_edges(*[(node, "f") for node in nodes_l]))
+        self.next_slide()
+        theorem = Tex("""{\\bf Theorem.} \\texttt{[FPR 2022]} \\\\
+                       If $\Pi$ is resolution refutation of \\\\
+                       $F \circ \\oplus_G$ with small
+                       enough width we have \\\\
+                       ${\\rm width}(\\Pi) {\\rm depth}(\\Pi)$""", """$\,\ge\, {\\rm width}(F) / 2.$""")\
+                       .scale_to_fit_width(8).next_to(expander, direction=RIGHT).shift(UP*2)
+        self.play(Write(theorem))
+        self.next_slide()
+        self.play(Indicate(theorem[1]))
+        self.next_slide()
+        theorem2 = Tex("""{\\bf Theorem.} \\texttt{[this work]} \\\\
+                       If $f$ has query complexity $k$, \\\\
+                       then $f \circ \\oplus_G$ has query complexity\\\\
+                        $\Omega(\\Delta(G) \cdot k)$.""")\
+                       .scale_to_fit_width(8).next_to(theorem, direction=DOWN, buff=0.7)
+        self.play(Write(theorem2))
+        self.next_slide()
+    
+class NewmanTheorem(Slide):
+    def construct(self):
+        random.seed(123323)
+        caption = Text("Domain Size is a Liability").move_to(UP * 3.5) 
+        self.play(FadeIn(caption))
+        self.next_slide()
+        newman = Tex("""{\\bf Theorem.} \\texttt{[Newman]} Let $f\\colon (\\{0,1\\}^n)^2 \\to \\{0,1\\}$. 
+                        Then $R_{1/3}^{\\rm private}(f) \\le R^{\\rm public}_{1/6}(f)$""", """$+\, \\log n + O(1).$
+                     """).next_to(caption, direction=DOWN)
+        self.play(Write(newman))
+        self.next_slide()
+        texts = [Tex("$t_" + str(i) + "$ :=", " \\texttt{" + ("".join(str(random.randint(0,1))
+                                                                       for _ in range(10)))*2 + "}") for i in range(1,5)]
+        for _, u in texts:
+            u.set_color(GREEN_C)
+        g_texts = VGroup(*texts).arrange(DOWN)
+        self.play(Write(g_texts))
+        self.next_slide()
+        """
+        First we globally pick at random k sufficiently long bitstrings t_1, ... t_k
+        Then Alice picks an integer i from [k] uniformly at random, sends it to Bob and they
+        run the public-coin protocol using the bits t_i as public random bits. 
+        """
         
-
+        alice = Text("Alice").move_to(DOWN + LEFT * 4)
+        bob = Text("Bob").move_to(DOWN + RIGHT * 4)
+        i = 2
+        self.play(*[FadeOut(t) for j, t in enumerate(texts) if j != i],
+                   FadeIn(alice), FadeIn(bob), texts[i].animate.next_to(newman, direction=DOWN, buff=1))
+        self.next_slide()
+        arrow = Arrow(start=alice.get_right(), end=bob.get_left())
+        text = Text("3").next_to(arrow, direction=UP)
+        self.play(Create(arrow), FadeIn(text))
+        self.next_slide()
+        rect = Rectangle(width=8, height=2.3).next_to(arrow, direction=DOWN)
+        rect_capt = Text("public-coin protocol", color=BLUE_C).next_to(rect.get_top(), direction=DOWN)
+        self.play(FadeIn(rect), FadeIn(rect_capt), texts[i][1].animate.next_to(rect_capt, direction=DOWN))
+        self.next_slide()
+        self.play(FadeOut(alice, bob, rect, rect_capt, arrow, text, texts[i]))
+        self.next_slide()
+        newman_new = Tex("""{\\bf Theorem.} \\texttt{[Newman]} Let $f\\colon (\\{0,1\\}^n)^2 \\to \\{0,1\\}$. 
+                        Then $R_{1/3}^{\\rm private}(f) \\le R^{\\rm public}_{1/6}(f)$""", """$+\, \\log k.$
+                     """).next_to(caption, direction=DOWN)
+        self.play(Transform(newman[1], newman_new[1]))
+        self.next_slide()
+        prob = MathTex("\\Pr_{\\vec{\\bf t}}\\left[ \\frac{1}{k} \sum_{i \in [k]} [\Pi^{{\\bf t}_i}(x,y) = f(x,y)] \le 1/3\\right] \le \\exp(-\\Omega(k))")
+        prob.next_to(newman_new.get_bottom(), direction=DOWN, buff=0.7)
+        self.play(Write(prob))
+        self.next_slide()
+        union_bound = Tex("Union bound over all $x,y \in \\{0,1\\}^n$:\\\\ success with probability $2^{2n} \\exp(-\Omega(k))$.")\
+            .next_to(prob, direction=DOWN, buff=0.7)
+        self.play(Write(union_bound))
+        self.next_slide()
+        gromulz = Tex("{\\bf Theorem} \\texttt{[Gromulz 1997]} For $f\colon \\{0,1\\}^n\\to \\{0,1\\}$ we have $\|\hat{f}\|_{0, 1/3} \le O(\|\hat{f}\|^2_1 \cdot n).$ ")
+        self.play(FadeOut(prob, union_bound), FadeIn(gromulz), FadeOut(newman[1]), FadeIn(MathTex("+\, \\log n + O(1)").move_to(newman_new[1].get_center())))
+        self.next_slide()
+        gromulz = Tex("{\\bf Theorem} \\texttt{[Lee, Shraibman 2015]} For $M\colon [N] \\times [N] \\to \{0,1\}$ we",
+                      " have  ${\\rm rk}_{1/3}(M) \le O(\gamma_2^2(M) \cdot \\log N).$ ").next_to(gromulz, direction=DOWN, buff=0.7).scale_to_fit_width(12)
+        self.play(FadeIn(gromulz))
+        self.next_slide()
+        
 class CommunicationComplexityIntro(Slide):
     def construct(self):
         random.seed(123323)
@@ -580,9 +672,6 @@ class CondensingRcc(Slide):
     def construct(self):
         random.seed(123323)
         caption = Tex("When ${\\rm R}$ is condensable").move_to(UP * 3.5) 
-        """
-        What if Alice and Bob are allowed to use randomness in their computations?                    
-        """
         self.play(Write(caption))
         self.next_slide()
         larc = Tex("{\\bf Log Approximate Rank Conjecture}: ${\\rm R}(M) = (\\log \\tilde{\\rm rk}(M))^C$ for some $C$")\
@@ -593,27 +682,85 @@ class CondensingRcc(Slide):
                        "$\\tilde{\\rm rk}(F) = O(n^4); ~~{\\rm R}(F) = \Omega(n)$.").next_to(larc, direction=DOWN)
         self.play(Write(cms2020))
         self.next_slide()
+        sink = DiGraph(list(range(7)), [(i, j) if random.randint(0,1) == 0 else (j, i) for i,j in combinations(range(7), 2)], 
+                       layout="circular",
+                       edge_config={"tip_config": {"tip_length": 0.35, "tip_width": 0.15}}).\
+            next_to(cms2020, direction=DOWN).shift(LEFT*3)
+        rect = Rectangle(height=4.5, width=5).next_to(sink, direction=RIGHT, buff=0.7).set_fill(color=WHITE, opacity=0.1).shift(DOWN * 0.7)
+        palette = [DARK_BLUE, GREEN_C, RED_E, YELLOW_C, BLUE_C, LIGHT_BROWN, ORANGE]
+        subrects0 = [Rectangle(color=palette[i], width=0.9, height=1.1).set_fill(color=palette[i], opacity=0.5) for i in range(7)]
+        subrects = [VGroup(r, Tex("\\textsc{Eq}").move_to(r.get_center())) for r in subrects0]
+        subrects[0].move_to(rect.get_top()).shift(DOWN * subrects[0].height / 2 + LEFT * (rect.width / 2 - subrects[0].width/2) + 0.05 * (DOWN + RIGHT))
+        for i in range(1, 4):
+            subrects[i].next_to(subrects[i-1], direction=RIGHT, buff=0.3)
+            if i < 3:
+                subrects[i].shift(DOWN * random.random() / 10)
+        subrects[4].next_to(subrects[3], direction=DOWN)
+        for i in range(5, 7):
+            subrects[i].next_to(subrects[i-1], direction=LEFT, buff=0.1).shift(DOWN * random.random() * 1.1)
+        pi = list(range(7))
+        random.shuffle(pi)
+        self.play(Create(sink), Create(rect))
+        self.next_slide()
+        
+        for j,i in enumerate(pi):
+            animations = []
+            to_remove_later = []
+            for a,b in sink.edges.keys():
+                if a == i or b == i:
+                    edge_cp = sink.edges[a,b].copy()
+                    edge_cp.stroke_color = palette[i]
+                    edge_cp.color = palette[i]
+                    edge_cp.stroke_width *= 2
+                    edge_cp.z_index = sink.edges[a,b].z_index + 100
+                    to_remove_later.append(edge_cp)
+                    animations.append(FadeIn(edge_cp))
+            self.play(*animations, Create(subrects[i]), duration=0.1)
+            if (j < 4):
+                self.next_slide()
+            animations = []
+            for e in to_remove_later:
+                animations.append(FadeOut(e))
+            self.play(*animations, duration=0.01)
+        
+        self.next_slide()
         result = Tex("{\\bf Theorem}: \\texttt{[this work]} There is a $2^{O(n)} \\times 2^{O(n)}$ submatrix $F'$ of $F$"
                      " that has $\\tilde{\\rm rk}(F') = O(n^3);$ and ${\\rm R}(F') = \Omega(n)$.")\
-                     .add_background_rectangle(color=DARK_BROWN).next_to(cms2020, direction=DOWN).scale_to_fit_width(11)
-        self.play(Write(result))
+                     .add_background_rectangle(color=DARK_BROWN, opacity=1)\
+                     .move_to(cms2020.get_center()).scale_to_fit_width(cms2020.width * 1.3)
+        self.play(Write(result), FadeIn(Rectangle(height=3, width=3).set_fill(WHITE, opacity=0.5).
+                                        move_to(rect.get_center())), 
+                                FadeIn(MathTex("F'").move_to(rect.get_center())))
         self.next_slide()
 
 class Conclusion(Slide):
     def construct(self):
         random.seed(123323)
         full_slide = Tex("""
-                        {\\bf Conclusion and Open Problems}
+                        {\\bf Open Problems}
                         \\begin{itemize}"""
-                        """ \\item Query complexity is not losslessly condensable by restriction. Uses \\texttt{[ABK 2016, Cheatsheets]}"""
-                        """ \\item Randomized communication complexity is not even weakly condensable. \\texttt{[HHH 2022]}"""
-                        """ \\item Sometimes randomized communication is condensable. Uses \\emph{Shearer Extractors}."""
-                        """ \\item Deterministic communication is weakly condensable. \\texttt{[Hrubes 2024]}."""
-                        """ \\item {\\bf Open:} Is deterministic communication losslessly condensable?"""
+                        """ \\item Is deterministic communication losslessly condensable? What about unambiguous certificate complexity?"""
+                        """ \\item Construct explicit Shearer extractors."""
                         """\\end{itemize}
-                        """).scale_to_fit_width(12)
+                        """).scale_to_fit_width(12).move_to(UP * 2.5)
         self.play(Write(full_slide))
         self.next_slide()
-        
-
-
+        shearer_def = Tex("""{\\bf Definition.} ${\\rm Ext}\\colon \\{0,1\\}^{cn} \\to \{0,1\}^m$ is $(k,\\epsilon)$-Shearer extractos wrt to $S_1, \dots, S_n \subseteq [m]$ if 
+                          $$\Delta(({\\bf U}_n, {\\bf Y}), ({\\rm Ext}({\\bf X})_{S_{\\bf Y}}, {\\bf Y})) \le \epsilon$$
+                          for every entropy-$k$ source ${\\bf X}$ where ${\\bf Y} \sim [n]$, ${\\bf U}_n \sim \{0,1\}^n.$""").scale_to_fit_width(12).next_to(full_slide, direction=DOWN)
+        self.play(Write(shearer_def))
+        self.next_slide()
+        input_r = Rectangle(width=3, height=0.6)
+        input_t = MathTex("cn").move_to(input_r.get_center())
+        input = Group(input_r, input_t)
+        outputs = [Group(Rectangle(width=1.6, height=0.6), MathTex("n")) for _ in range(5)]
+        input.next_to(shearer_def, direction=DOWN)
+        input.shift(LEFT * 5)
+        outputs[0].next_to(input, direction=RIGHT, buff=0.7)
+        for i in range(1, len(outputs)):
+            outputs[i].next_to(outputs[i-1], direction=RIGHT, buff=0.05)
+        arr = Arrow(input.get_right(), outputs[0].get_left())
+        self.play(FadeIn(input), FadeIn(arr), *[FadeIn(o) for o in outputs])
+        self.next_slide()
+        self.play(*[outputs[i].animate.shift(i * LEFT * outputs[i].width / 4) for i in range(len(outputs))])
+        self.next_slide()
